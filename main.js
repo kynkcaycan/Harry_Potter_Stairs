@@ -22,12 +22,12 @@ scene.add(pointLight);
 
 // Texture loader
 const textureLoader = new THREE.TextureLoader();
-const wallTexture = textureLoader.load('textures/beton.jpg'); // Replace with your texture image path
+const wallTexture = textureLoader.load('bg.jpg'); // Replace with your new texture image path
 wallTexture.wrapS = THREE.RepeatWrapping;
 wallTexture.wrapT = THREE.RepeatWrapping;
-wallTexture.repeat.set(1, 10); // Repeat texture to give the illusion of infinite height
+wallTexture.repeat.set(4, 4); // Adjust repeat values to fit the wall size
 
-const doorTexture = textureLoader.load('textures/beton.jpg'); // Replace with your door texture image path
+const doorTexture = textureLoader.load('door.jpg'); // Replace with your door texture image path
 
 // Gothic staircase geometry
 let stairsGroup;
@@ -78,7 +78,7 @@ function createStaircase() {
         const sphereGeometry = new THREE.SphereGeometry(0.1, 16, 16);
         const sphereMaterial = new THREE.MeshStandardMaterial({ color: 0xD2B48C });
 
-        const sphereOffset = +0.4; // Of
+        const sphereOffset = +0.4; // Offset for sphere positioning
         const leftSphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
         leftSphere.position.copy(leftRailing.position.clone().add(new THREE.Vector3(0, sphereOffset, 0)));
         stairsGroup.add(leftSphere);
@@ -90,7 +90,7 @@ function createStaircase() {
         railingsSpheres.push(rightSphere);
     }
 
-    // Creat
+    // Create railing curves
     const curveMaterial = new THREE.LineBasicMaterial({ color: 0xD2B48C });
 
     // Left railing curve
@@ -106,7 +106,7 @@ function createStaircase() {
     stairsGroup.add(rightCurveMesh);
 
     // Adjust position of the entire staircase to align with the door
-    stairsGroup.position.set(-10 + stepDepth / 2, 0, -10);
+    stairsGroup.position.set(-10 + stepDepth / 2, 0, 0);
 
     scene.add(stairsGroup);
 }
@@ -132,10 +132,10 @@ function createWallDoor(x, y, z) {
 // Function to create the walls
 function createWalls() {
     // Updated wall colors and shading
-    const wallTexture = textureLoader.load('path/to/your/texture.jpg'); // Replace with your texture image path
+    const wallTexture = textureLoader.load('bg.jpg'); // Replace with your texture image path
     wallTexture.wrapS = THREE.RepeatWrapping;
     wallTexture.wrapT = THREE.RepeatWrapping;
-    wallTexture.repeat.set(1, 10); // Repeat texture to give the illusion of infinite height
+    wallTexture.repeat.set(4, 4); // Adjust repeat values to fit the wall size
 
     const wallMaterial = new THREE.MeshStandardMaterial({
         map: wallTexture,
@@ -151,19 +151,25 @@ function createWalls() {
     // Left wall
     const leftWallGeometry = new THREE.BoxGeometry(wallWidth, wallHeight, wallDepth);
     const leftWall = new THREE.Mesh(leftWallGeometry, wallMaterial);
-    leftWall.position.set(-10, wallHeight / 2 - 50, -10); // Adjust the position to make it appear infinite
+    leftWall.position.set(-10, wallHeight / 2 - 50, 0); // Adjust the position to make it appear infinite
     scene.add(leftWall);
 
-    // Right wall (smaller)
-    const rightWallGeometry = new THREE.BoxGeometry(wallWidth, wallHeight, wallDepth / 2); // Adjusted depth
+    // Right wall
+    const rightWallGeometry = new THREE.BoxGeometry(wallWidth, wallHeight, wallDepth); // Adjusted depth to match left wall
     const rightWall = new THREE.Mesh(rightWallGeometry, wallMaterial);
-    rightWall.position.set(30, wallHeight / 2 - 50, -10); // Adjust the position to make it appear infinite
+    rightWall.position.set(10, wallHeight / 2 - 50, 0); // Adjust the position to make it appear infinite
     scene.add(rightWall);
 
+    // Back wall
+    const backWallGeometry = new THREE.BoxGeometry(wallDepth, wallHeight, wallWidth);
+    const backWall = new THREE.Mesh(backWallGeometry, wallMaterial);
+    backWall.position.set(0, wallHeight / 2 - 50, -wallDepth / 2); // Position the back wall behind the staircase
+    scene.add(backWall);
+
     // Add doors to each wall
-    createWallDoor(-10 + wallWidth / 2, 3.5, -10); // Left wall door
-    createWallDoor(30 - wallWidth / 2, 3.5, -10); // Right wall door
-    createWallDoor(10, 3.5, -wallDepth / 2 - 10); // Back wall door (if you have a back wall)
+    createWallDoor(-10 + wallWidth / 2, 3.5, 0); // Left wall door
+    createWallDoor(10 - wallWidth / 2, 3.5, 0); // Right wall door
+    createWallDoor(0, 3.5, -wallDepth / 2); // Back wall door
 }
 
 // Call the functions to create the staircase, door, and walls
