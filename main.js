@@ -5,7 +5,7 @@ scene.fog = new THREE.FogExp2(0x202020, 0.01); // Add exponential fog for infini
 
 // Camera setup
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(0, 5, 10);
+camera.position.set(0, 5, 20); // Adjusted to get a better view of the staircases
 
 // Renderer setup
 const renderer = new THREE.WebGLRenderer();
@@ -17,41 +17,41 @@ const ambientLight = new THREE.AmbientLight(0x404040, 1.5); // Soft white light
 scene.add(ambientLight);
 
 const pointLight = new THREE.PointLight(0xffffff, 1, 100);
-pointLight.position.set(10, 10, 10);
+pointLight.position.set(0, 0, 0);
 scene.add(pointLight);
 
 // Texture loader
 const textureLoader = new THREE.TextureLoader();
-const wallTexture = textureLoader.load('textures/beton.jpg'); // Replace with your texture image path
+const wallTexture = textureLoader.load('wall.jpg'); // Replace with your new texture image path
 wallTexture.wrapS = THREE.RepeatWrapping;
 wallTexture.wrapT = THREE.RepeatWrapping;
-wallTexture.repeat.set(1, 10); // Repeat texture to give the illusion of infinite height
+wallTexture.repeat.set(4, 4); // Adjust repeat values to fit the wall size
 
-const doorTexture = textureLoader.load('textures/beton.jpg'); // Replace with your door texture image path
-
+const doorTexture = textureLoader.load('door.jpg'); // Replace with your door texture image path
 // Gothic staircase geometry
 let stairsGroup;
 let railingsSpheres = []; // Array to store railing spheres
 let currentRotationAngle = 0; // Track the current rotation angle of the staircase
-
-function createStaircase() {
-    stairsGroup = new THREE.Group();
+const stairTexture = textureLoader.load('stair.jpg'); // Replace with your stair texture image path
+// Gothic staircase geometry
+function createStaircase(x, y, z, rotationAngle = 0, stepCount = 10) {
+    const stairsGroup = new THREE.Group();
 
     const stepHeight = 0.3;
-    const stepDepth = 1;
+    const stepDepth = 0.7;
     const stepWidth = 6;
 
     const stepGeometry = new THREE.BoxGeometry(stepWidth, stepHeight, stepDepth);
-    const stepMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 }); // Warm brown color
+    const stepMaterial = new THREE.MeshStandardMaterial({ map: stairTexture }); 
 
     const railingHeight = 1;
     const railingThickness = 0.1;
-    const railingMaterial = new THREE.MeshStandardMaterial({ color: 0xD2B48C }); // Warm tan color
+    const railingMaterial = new THREE.MeshStandardMaterial({ map: stairTexture }); // Warm tan color
 
     let leftRailingPositions = [];
     let rightRailingPositions = [];
 
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < stepCount; i++) {
         const step = new THREE.Mesh(stepGeometry, stepMaterial);
         step.position.set(0, i * stepHeight, -i * stepDepth);
         stairsGroup.add(step);
@@ -78,19 +78,17 @@ function createStaircase() {
         const sphereGeometry = new THREE.SphereGeometry(0.1, 16, 16);
         const sphereMaterial = new THREE.MeshStandardMaterial({ color: 0xD2B48C });
 
-        const sphereOffset = +0.4; // Of
+        const sphereOffset = +0.4; // Offset for sphere positioning
         const leftSphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
         leftSphere.position.copy(leftRailing.position.clone().add(new THREE.Vector3(0, sphereOffset, 0)));
         stairsGroup.add(leftSphere);
-        railingsSpheres.push(leftSphere);
 
         const rightSphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
         rightSphere.position.copy(rightRailing.position.clone().add(new THREE.Vector3(0, sphereOffset, 0)));
         stairsGroup.add(rightSphere);
-        railingsSpheres.push(rightSphere);
     }
 
-    // Creat
+    // Create railing curves
     const curveMaterial = new THREE.LineBasicMaterial({ color: 0xD2B48C });
 
     // Left railing curve
@@ -105,10 +103,20 @@ function createStaircase() {
     const rightCurveMesh = new THREE.Mesh(rightCurveGeometry, railingMaterial);
     stairsGroup.add(rightCurveMesh);
 
-    // Adjust position of the entire staircase to align with the door
-    stairsGroup.position.set(-10 + stepDepth / 2, 0, -10);
+    // Adjust position and rotation of the entire staircase to align with the door
+    stairsGroup.position.set(x, y, z);
+    stairsGroup.rotation.y = rotationAngle;
 
     scene.add(stairsGroup);
+}
+
+function createAllStairs() {
+    // Create three staircases positioned and rotated to give a complex structure
+    createStaircase(-10 + 0.7 / 2, 0, 0); // Default orientation
+    createStaircase(-10 + 0.7 / 2, -10, 0); // Rotated 180 degrees
+    createStaircase(-10 + 0.7 / 2, -9, -10, 3*Math.PI/2, 30); // Rotated 90 degrees
+    createStaircase(-10 + 0.7 / 2, -9, -10,0 , 2); // Rotated 90 degrees
+
 }
 
 // Create a door on a wall
@@ -132,10 +140,10 @@ function createWallDoor(x, y, z) {
 // Function to create the walls
 function createWalls() {
     // Updated wall colors and shading
-    const wallTexture = textureLoader.load('path/to/your/texture.jpg'); // Replace with your texture image path
+    const wallTexture = textureLoader.load('wall.jpg'); // Replace with your texture image path
     wallTexture.wrapS = THREE.RepeatWrapping;
     wallTexture.wrapT = THREE.RepeatWrapping;
-    wallTexture.repeat.set(1, 10); // Repeat texture to give the illusion of infinite height
+    wallTexture.repeat.set(4, 4); // Adjust repeat values to fit the wall size
 
     const wallMaterial = new THREE.MeshStandardMaterial({
         map: wallTexture,
@@ -151,23 +159,29 @@ function createWalls() {
     // Left wall
     const leftWallGeometry = new THREE.BoxGeometry(wallWidth, wallHeight, wallDepth);
     const leftWall = new THREE.Mesh(leftWallGeometry, wallMaterial);
-    leftWall.position.set(-10, wallHeight / 2 - 50, -10); // Adjust the position to make it appear infinite
+    leftWall.position.set(-10, wallHeight / 2 - 50, 0); // Adjust the position to make it appear infinite
     scene.add(leftWall);
 
-    // Right wall (smaller)
-    const rightWallGeometry = new THREE.BoxGeometry(wallWidth, wallHeight, wallDepth / 2); // Adjusted depth
+    // Right wall
+    const rightWallGeometry = new THREE.BoxGeometry(wallWidth, wallHeight, wallDepth); // Adjusted depth to match left wall
     const rightWall = new THREE.Mesh(rightWallGeometry, wallMaterial);
-    rightWall.position.set(30, wallHeight / 2 - 50, -10); // Adjust the position to make it appear infinite
+    rightWall.position.set(10, wallHeight / 2 - 50, 0); // Adjust the position to make it appear infinite
     scene.add(rightWall);
 
+    // Back wall
+    const backWallGeometry = new THREE.BoxGeometry(wallDepth, wallHeight, wallWidth);
+    const backWall = new THREE.Mesh(backWallGeometry, wallMaterial);
+    backWall.position.set(0, wallHeight / 2 - 50, -wallDepth / 2); // Position the back wall behind the staircase
+    scene.add(backWall);
+
     // Add doors to each wall
-    createWallDoor(-10 + wallWidth / 2, 3.5, -10); // Left wall door
-    createWallDoor(30 - wallWidth / 2, 3.5, -10); // Right wall door
-    createWallDoor(10, 3.5, -wallDepth / 2 - 10); // Back wall door (if you have a back wall)
+    createWallDoor(-10 + wallWidth / 2, 3.5, 0); // Left wall door
+    createWallDoor(10 - wallWidth / 2, 3.5, 1); // Right wall door
+    createWallDoor(0, 3.5, -wallDepth / 2); // Back wall door
 }
 
 // Call the functions to create the staircase, door, and walls
-createStaircase();
+createAllStairs();
 createWalls();
 
 // Raycaster for detecting clicks
@@ -183,7 +197,7 @@ function onMouseClick(event) {
     raycaster.setFromCamera(mouse, camera);
 
     // Calculate objects intersecting the picking ray
-    const intersects = raycaster.intersectObjects(stairsGroup.children, true);
+    const intersects = raycaster.intersectObjects(scene.children, true);
 
     if (intersects.length > 0) {
         // Rotate the staircase group by -30 degrees (-π/6 radians) around the y-axis if within bounds
@@ -193,7 +207,7 @@ function onMouseClick(event) {
         // Check if the new rotation angle will cause the staircase to intersect the walls
         if (Math.abs(newAngle) <= Math.PI) { // Allow up to 90 degrees rotation in either direction
             const axis = new THREE.Vector3(0, 1, 0); // Rotate around the y-axis
-            stairsGroup.rotateOnAxis(axis, angleIncrement);
+            intersects[0].object.parent.rotateOnAxis(axis, angleIncrement);
             currentRotationAngle = newAngle;
         }
     }
