@@ -90,7 +90,7 @@ function createStaircase() {
         railingsSpheres.push(rightSphere);
     }
 
-    // Create railing curves
+    // Creat
     const curveMaterial = new THREE.LineBasicMaterial({ color: 0xD2B48C });
 
     // Left railing curve
