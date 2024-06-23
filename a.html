@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three.js Örneği - Yapışık Silindirler</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        canvas {
+            display: block;
+        }
+        button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <button id="toggleLightButton" onclick="toggleLight()">Işığı Aç/Kapat</button>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        var scene, camera, renderer;
+        var light, ambientLight;
+        var lightOn = true;
+
+        var lamp1, lamp2;
+
+        init();
+        render();
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            camera.position.z = 8;
+
+            // Birinci lamba
+            lamp1 = createLamp(-2); // -2 birim sola yerleştir
+
+            // İkinci lamba
+            lamp2 = createLamp(2); // 2 birim sağa yerleştir
+
+            // Işık ekleyelim
+            light = new THREE.PointLight(0xffffff, 1, 100);
+            light.position.set(0, 0, 5);
+            scene.add(light);
+
+            ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+            scene.add(ambientLight);
+
+            // Tarayıcı boyutu değiştiğinde sahne boyutunu güncelle
+            window.addEventListener('resize', function () {
+                var width = window.innerWidth;
+                var height = window.innerHeight;
+                renderer.setSize(width, height);
+                camera.aspect = width / height;
+                camera.updateProjectionMatrix();
+            });
+        }
+
+        function render() {
+            renderer.render(scene, camera);
+            requestAnimationFrame(render);
+        }
+
+        function toggleLight() {
+            lightOn = !lightOn;
+            light.visible = lightOn;
+        }
+
+        function createLamp(xPosition) {
+            var lamp = new THREE.Group();
+
+            // Ortadaki cam silindir
+            var cylinderGeometryCenter = new THREE.CylinderGeometry(1, 1, 3, 16);
+            var cylinderMaterialCenter = new THREE.MeshPhongMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 });
+            var cylinderCenter = new THREE.Mesh(cylinderGeometryCenter, cylinderMaterialCenter);
+            cylinderCenter.position.y = 0; // Orta
+            cylinderCenter.castShadow = true;
+            cylinderCenter.receiveShadow = true;
+            lamp.add(cylinderCenter);
+
+            // Üst silindir (opak)
+            var cylinderGeometryTop = new THREE.CylinderGeometry(0.5, 1, 0.5, 16);
+            var cylinderMaterialTop = new THREE.MeshPhongMaterial({ color: 0x555555 });
+            var cylinderTop = new THREE.Mesh(cylinderGeometryTop, cylinderMaterialTop);
+            cylinderTop.position.y = 1.75; // Yukarıda, orta silindirin tavanına temas edecek şekilde
+            cylinderTop.castShadow = true;
+            cylinderTop.receiveShadow = true;
+            lamp.add(cylinderTop);
+
+            // Alt silindir (opak)
+            var cylinderGeometryBottom = new THREE.CylinderGeometry(1, 1, 0.2, 16);
+            var cylinderMaterialBottom = new THREE.MeshPhongMaterial({ color: 0x555555 });
+            var cylinderBottom = new THREE.Mesh(cylinderGeometryBottom, cylinderMaterialBottom);
+            cylinderBottom.position.y = -1.5; // Aşağıda
+            cylinderBottom.castShadow = true;
+            cylinderBottom.receiveShadow = true;
+            lamp.add(cylinderBottom);
+
+            // Çubuk (bar) oluşturalım (yatay olarak)
+            var barGeometry = new THREE.BoxGeometry(3, 0.1, 0.1); // Uzunluk, ortadaki silindirin çapı kadar, genişlik 0.1 birim
+            var barMaterial = new THREE.MeshPhongMaterial({ color: 0xaaaaaa });
+            var bar = new THREE.Mesh(barGeometry, barMaterial);
+            bar.position.set(1.5, 2, 0); // Orta silindirin üstüne yatay olarak yerleştirildi
+            bar.rotation.z = Math.PI; // 90 derece döndürüldü (yatay)
+            bar.castShadow = true;
+            bar.receiveShadow = true;
+            lamp.add(bar);
+
+            lamp.position.x = xPosition;
+
+            scene.add(lamp);
+
+            return lamp;
+        }
+    </script>
+</body>
+</html>
