@@ -78,8 +78,7 @@ function createStaircase() {
         const sphereGeometry = new THREE.SphereGeometry(0.1, 16, 16);
         const sphereMaterial = new THREE.MeshStandardMaterial({ color: 0xD2B48C });
 
-        const sphereOffset = +0.4; // Offset spheres downwards
-
+        const sphereOffset = +0.4; // Of
         const leftSphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
         leftSphere.position.copy(leftRailing.position.clone().add(new THREE.Vector3(0, sphereOffset, 0)));
         stairsGroup.add(leftSphere);
