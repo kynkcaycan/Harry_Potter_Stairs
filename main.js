@@ -38,7 +38,7 @@ wallTexture.wrapS = THREE.RepeatWrapping;
 wallTexture.wrapT = THREE.RepeatWrapping;
 wallTexture.repeat.set(4, 4); // Adjust repeat values to fit the wall size
 
-const doorTexture = textureLoader.load('door.jpg'); // Replace with your door texture image path
+const doorTexture = textureLoader.load('door2.jpg'); // Replace with your door texture image path
 const stairTexture = textureLoader.load('stair.jpg'); // Replace with your stair texture image path
 
 // Gothic staircase geometry
@@ -54,11 +54,11 @@ function createStaircase(x, y, z, rotationAngle = 0, stepCount = 10) {
     const stepWidth = 3;
 
     const stepGeometry = new THREE.BoxGeometry(stepWidth, stepHeight, stepDepth);
-    const stepMaterial = new THREE.MeshStandardMaterial({ map: stairTexture });
+    const stepMaterial = new THREE.MeshStandardMaterial({ color: 0x808080 });
 
     const railingHeight = 1;
     const railingThickness = 0.1;
-    const railingMaterial = new THREE.MeshStandardMaterial({ map: stairTexture });
+    const railingMaterial = new THREE.MeshStandardMaterial({ color: 0x808080 });
 
     let leftRailingPositions = [];
     let rightRailingPositions = [];
@@ -121,6 +121,9 @@ function createStaircase(x, y, z, rotationAngle = 0, stepCount = 10) {
 
     scene.add(stairsGroup);
 }
+
+
+
 
 function createLStaircase(x, y, z, rotationAngle = 0, stepCount = 10) {
     const stairsGroup = new THREE.Group();
@@ -214,29 +217,69 @@ function createLStaircase(x, y, z, rotationAngle = 0, stepCount = 10) {
 
 
 function createAllStairs() {
-    createStaircase(-8 + 0.7 / 2, 0, 1, -2); // Normal staircase
+    createStaircase(-8 + 0.7 / 2, 0, 1, -2,18);
+   // createStaircase(-8 + 0.7 / 2, 0, 1, 2,20);
+     // Normal staircase
+     
     
     createLStaircase(-3, -6, 5, Math.PI / 25, 13); // L-shaped staircase// L-shaped staircase
 }
 
 
 // Create a door on a wall
-function createWallDoor(x, y, z) {
+function createWallDoor(x, y, z, angle) {
     const doorWidth = 3;
     const doorHeight = 7;
     const doorDepth = 0.5;
+
+    // Door material with texture
     const doorMaterial = new THREE.MeshStandardMaterial({
         map: doorTexture
-    }); // Apply door texture
+    });
 
+    // Door geometry
     const doorGeometry = new THREE.BoxGeometry(doorWidth, doorHeight, doorDepth);
     const doorMesh = new THREE.Mesh(doorGeometry, doorMaterial);
 
     // Position the door on the specified wall
     doorMesh.position.set(x, y, z);
 
+    // Rotate the door (example rotation)
+    doorMesh.rotation.y = angle; // angle in radians
+
+    // Add door to the scene
     scene.add(doorMesh);
+
+    // Back panel geometry
+    const backPanelWidth = doorWidth + 1;
+    const backPanelHeight = doorHeight + 1;
+    const backPanelDepth = 0.1; // Thickness of the back panel
+
+    // Back panel material (white color)
+    const textureLoader = new THREE.TextureLoader();
+    const texture = textureLoader.load('path_to_your_texture_image.jpg'); // Replace with your texture path
+    
+    const backPanelMaterial = new THREE.MeshStandardMaterial({
+        map: wallTexture,  // Assign the loaded texture to the 'map' property
+        color: 0xffffff // Optional: Default color if texture is not fully loaded or unavailable
+    });
+    
+
+    const backPanelGeometry = new THREE.BoxGeometry(backPanelWidth, backPanelHeight, backPanelDepth);
+    const backPanelMesh = new THREE.Mesh(backPanelGeometry, backPanelMaterial);
+
+    // Position the back panel behind the door
+    backPanelMesh.position.set(x, y, z - (doorDepth / 2 + backPanelDepth / 2));
+
+    // Rotate the back panel the same as the door
+    backPanelMesh.rotation.y = angle;
+
+    // Add back panel to the scene
+    scene.add(backPanelMesh);
 }
+
+
+
 function toggleLight() {
     lightOn = !lightOn;
     light.visible = lightOn;
@@ -244,6 +287,9 @@ function toggleLight() {
 
 
 let draggableLamps = []; // DragControls için kullanılacak dizi
+
+
+
 function createLamp(xPosition, yPosition, zPosition) {
     const lamp = new THREE.Group();
 
@@ -293,8 +339,10 @@ function createLamp(xPosition, yPosition, zPosition) {
     // Add lamp to draggable array
     draggableLamps.push(lamp);
 
-    return lamp;
+    return lamp; // Return the lamp group
 }
+
+
 
 
 
@@ -336,14 +384,32 @@ function createWalls() {
     scene.add(backWall);
 
     // Add doors to each wall
-    createWallDoor(-10 + wallWidth / 2, 4, 4); // Left wall door
-    createWallDoor(10 - wallWidth / 2, 3.5, 1); // Right wall door
-    createWallDoor(0, 3.5, -wallDepth / 2); // Back wall door
-
+    createWallDoor(-8 + wallWidth / 2, 4, 3,180); // Left wall door
+    createWallDoor(8 - wallWidth / 2, 3.5, 1,-80); // Right wall door
+    createWallDoor(0, 3.5, -wallDepth / 2,0); // Back wall door
+    
     // Add lamps to each wall
     createLamp(-9 + wallWidth / 2, -3, 0); // Left wall lamp
     createLamp(9 - wallWidth / 10, -6, 0); // Right wall lamp
     createLamp(5, 9, -wallDepth / 2); // Back wall lamp
+     
+    // DragControls
+// Create an array of lamp meshes for DragControls
+const lamps = draggableLamps.map(lamp => lamp.children[0]); // Assuming lamp is the parent group
+
+const dragControls = new THREE.DragControls(lamps, camera, renderer.domElement);
+
+// Add event listeners for drag start and end
+dragControls.addEventListener('dragstart', function (event) {
+    controls.enabled = false; // Disable camera controls while dragging
+});
+
+dragControls.addEventListener('dragend', function (event) {
+    controls.enabled = true; // Re-enable camera controls after dragging ends
+});
+
+
+    
 }
 function createPicture(x, y, z, imageUrl, w, h, frameThickness, frameTextureUrl) {
     // Tablo geometrisi
@@ -379,7 +445,7 @@ function createPicture(x, y, z, imageUrl, w, h, frameThickness, frameTextureUrl)
 
     return group;
 }
-function createMovingRedSun() {
+function createMovingTransparentSun() {
     // Yol noktaları tanımlama (objenin hareket ettiği yollar)
     const pathPoints = [
         new THREE.Vector3(-1.4, 8, 10), // Başlangıç noktası
@@ -390,9 +456,9 @@ function createMovingRedSun() {
 
     let pointIndex = 1; // Başlangıç noktası olarak pathPoints dizisinin ikinci noktasını seçtik
 
-    // Güneşi andıran özellikler
+    // Güneş ışığının rengi ve yoğunluğu
     const sunColor = 0xff9900; // Güneş rengi (turuncu tonunda)
-    const sunIntensity = 1.0; // Güneş ışığı yoğunluğu
+    const sunIntensity = 3.0; // Güneş ışığı yoğunluğu
     const sunDistance = 15; // Güneşin sahnede yerleştirileceği mesafe
 
     // Güneş ışığı oluşturma
@@ -402,43 +468,154 @@ function createMovingRedSun() {
 
     // Güneşi temsil edecek kırmızı küre
     const sunGeometry = new THREE.SphereGeometry(0.5, 16, 16);
-    const sunMaterial = new THREE.MeshBasicMaterial({ color: sunColor });
+    const sunMaterial = new THREE.MeshLambertMaterial({ color: sunColor, transparent: true, opacity: 0.7 }); // Saydam malzeme
     const sun = new THREE.Mesh(sunGeometry, sunMaterial);
     sun.position.copy(pathPoints[0]); // Güneşi başlangıç noktasına yerleştirme
     scene.add(sun); // Güneşi sahneye ekleme
 
+    // Güneş etrafındaki ışık saçan nokta ışığı
+    const pointLight = new THREE.PointLight(0xffffff, 1, 10); // Beyaz renk, yoğunluk ve etki mesafesi
+    sun.add(pointLight); // Güneşin etrafında ışık saçacak nokta ışığını güneşe bağlama
+
+    // Deniz dalgası texture'ını yükleme
+    const textureLoader = new THREE.TextureLoader();
+    const waveTexture = textureLoader.load('ocean.jpg'); // Deniz dalgası texture'ı
+
+    // Shader malzemesi
+    const waveMaterial = new THREE.ShaderMaterial({
+        uniforms: {
+            time: { value: 0 },
+            texture: { value: waveTexture }
+        },
+        vertexShader: `
+            uniform float time;
+            varying vec2 vUv;
+            void main() {
+                vUv = uv;
+                vec3 pos = position;
+                pos.z += sin(pos.x * 4.0 + time * 2.0) * 0.1; // Dalga efekti
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+            }
+        `,
+        fragmentShader: `
+            uniform sampler2D texture;
+            varying vec2 vUv;
+            void main() {
+                gl_FragColor = texture2D(texture, vUv);
+            }
+        `,
+        transparent: true
+    });
+
+    // Deniz dalgası geometrisi
+    const waveGeometry = new THREE.PlaneGeometry(4, 3, 10, 10); // Genişlik, yükseklik ve segment sayıları
+    const waveMesh = new THREE.Mesh(waveGeometry, waveMaterial);
+
+    // Deniz dalgasının pozisyonunu ayarlama
+    waveMesh.position.set(0, 9, 10); // Burada x, y, z koordinatlarını belirleyebilirsiniz
+    scene.add(waveMesh); // Sahneye deniz dalgası eklemek
+
     function moveSun() {
-        // Hedef noktaya doğru ilerleme vektörü
+        // Calculate the movement direction vector
         const direction = new THREE.Vector3().copy(pathPoints[pointIndex]).sub(sunLight.position).normalize();
-        const speed = 0.009; // Hız ayarı
-
-        // Güneşi hedefe doğru hareket ettirme
+        const speed = 0.009; // Movement speed
+    
+        // Move the sun towards the target
         sunLight.position.add(direction.multiplyScalar(speed));
-        sun.position.copy(sunLight.position); // Güneşi de aynı pozisyona yerleştirme
-
-        // Eğer güneş hedef noktaya ulaştıysa bir sonraki hedefe geç
+        sun.position.copy(sunLight.position); // Position the sun mesh at the same position
+    
+        // Update the intensity based on the vertical position of the sun
+        const intensityFactor = (sunLight.position.y - 8) / 2*10; // Adjust this factor as needed
+    
+        // Decrease the intensity of sunLight and pointLight as sun moves up
+        sunLight.intensity = Math.max(0.5, sunIntensity - intensityFactor);
+        pointLight.intensity = Math.max(0.2, 1 - intensityFactor / 3);
+    
+        // If sun reaches the target point, move to the next point
         if (sunLight.position.distanceTo(pathPoints[pointIndex]) < speed) {
             pointIndex = (pointIndex + 1) % pathPoints.length;
             if (pointIndex === 0) {
-                // Son noktaya geldiğinde başlangıç noktasına dön
+                // Return to the starting point when reaching the end
                 sunLight.position.copy(pathPoints[0]);
                 sun.position.copy(pathPoints[0]);
             }
         }
-
-        // Yeniden render et
+    
+        // Update the time uniform for the wave shader material
+        waveMaterial.uniforms.time.value += 0.02;
+    
+        // Render the scene
         renderer.render(scene, camera);
-
-        // Bir sonraki frame için animasyon çerçevesini talep et
+    
+        // Request the next animation frame
         requestAnimationFrame(moveSun);
+    
+    
     }
 
     // Güneşi hareket ettirme işlevini çağırarak animasyonu başlat
     moveSun();
 }
 
-// Hareketli bir güneş oluştur ve sahneye ekle
-createMovingRedSun();
+// Fonksiyonu çağırma (örnek olarak)
+createMovingTransparentSun();
+
+// Ensure you have access to THREE.js library and the scene, camera, renderer are already set up
+
+function createWavingOcean() {
+    // Load the ocean texture
+    const textureLoader = new THREE.TextureLoader();
+    const oceanTexture = textureLoader.load('ocean.jpg');
+
+    // Shader material for waving effect
+    const waveMaterial = new THREE.ShaderMaterial({
+        uniforms: {
+            time: { value: 0 },  // Time uniform for animation
+            texture: { value: oceanTexture }  // Ocean texture
+        },
+        vertexShader: `
+            uniform float time;
+            varying vec2 vUv;
+            void main() {
+                vUv = uv;
+                vec3 pos = position;
+                // Apply waving effect
+                pos.z += sin(pos.x * 4.0 + time * 2.0) * 0.1;  // Adjust the wave parameters as needed
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+            }
+        `,
+        fragmentShader: `
+            uniform sampler2D texture;
+            varying vec2 vUv;
+            void main() {
+                gl_FragColor = texture2D(texture, vUv);
+            }
+        `,
+        transparent: true
+    });
+
+    // Geometry for the waving ocean surface
+    const planeGeometry = new THREE.PlaneGeometry(100, 100, 100, 100); // Adjust size and segments as needed
+    const waveMesh = new THREE.Mesh(planeGeometry, waveMaterial);
+
+    // Position and add the waving ocean to the scene
+    waveMesh.rotation.x = -Math.PI / 2;  // Rotate to align with the horizon
+    waveMesh.position.set(0, 7, 10);  // Adjust position as needed
+    scene.add(waveMesh);
+
+    // Animation function to update time uniform for waving effect
+    function animateWaves() {
+        waveMaterial.uniforms.time.value += 0.02;  // Adjust animation speed as needed
+        renderer.render(scene, camera);
+        requestAnimationFrame(animateWaves);
+    }
+
+    // Start the animation
+    animateWaves();
+}
+
+// Call the function to create the waving ocean effect
+createWavingOcean();
 
 
 
@@ -450,10 +627,10 @@ createPicture(-6, 9, 10, 'monalisa.jpg', 1, 4, 0.23, 'frameTexture.jpg');
 createPicture(6, 1, 10, 'manhorse.jpg', 0.9, 2, 0.21, 'frameTexture.jpg');
 createPicture(1, -1.4, 10, 'seetwoman8.jpg', 1, 2, 0.27, 'frameTexture.jpg');
 createPicture(5, 9, 10, 'yunan.jpg', 2, 1, 0.26, 'frameTexture.jpg');
-createPicture(0, 9, 10, '', 4, 3, 0.26, 'frameTexture.jpg');
+createPicture(0, 9, 10, 'sky.jpg', 4, 3, 0.26, 'frameTexture.jpg');
 
 // Özel olarak belirttiğiniz yere hareketli bir nesne eklemek
-
+let lastRenderTime = Date.now();
 
 // Call the functions to create the staircase, door, and walls
 createAllStairs();
