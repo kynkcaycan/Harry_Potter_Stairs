@@ -3,7 +3,7 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x202020);
 scene.fog = new THREE.FogExp2(0x202020, 0.01); // Add exponential fog for infinite floor illusion
 
-//light color
+// Light color
 // Hexadecimal renk kodunu RGB değerlerine dönüştürme
 const hex = 'f0cbae';
 const r = parseInt(hex.substring(0, 2), 16) / 255;
@@ -11,8 +11,6 @@ const g = parseInt(hex.substring(2, 4), 16) / 255;
 const b = parseInt(hex.substring(4, 6), 16) / 255;
 // THREE.Color nesnesi oluşturma
 const color = new THREE.Color(r, g, b);
-// Örnek kullanım: Bir malzeme için renk atama
-const material = new THREE.MeshBasicMaterial({ color: color });
 
 // Camera setup
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -39,6 +37,7 @@ wallTexture.wrapT = THREE.RepeatWrapping;
 wallTexture.repeat.set(4, 4); // Adjust repeat values to fit the wall size
 
 const doorTexture = textureLoader.load('door.jpg'); // Replace with your door texture image path
+const archTexture = textureLoader.load('arch.jpg'); // Replace with your arch texture image path
 const stairTexture = textureLoader.load('stair.jpg'); // Replace with your stair texture image path
 
 // Gothic staircase geometry
@@ -46,13 +45,9 @@ let stairsGroup;
 let railingsSpheres = []; // Array to store railing spheres
 let currentRotationAngle = 0; // Track the current rotation angle of the staircase
 
-function createStaircase(x, y, z, rotationAngle = 0, stepCount = 10) {
+function createStaircase(x, y, z, rotationAngle = 0, stepCount = 10, stepWidth = 4, stepHeight = 0.3, stepDepth = 0.7) {
     const stairsGroup = new THREE.Group();
-
-    const stepHeight = 0.4;
-    const stepDepth = 0.7;
-    const stepWidth = 3;
-
+    
     const stepGeometry = new THREE.BoxGeometry(stepWidth, stepHeight, stepDepth);
     const stepMaterial = new THREE.MeshStandardMaterial({ map: stairTexture });
 
@@ -120,6 +115,8 @@ function createStaircase(x, y, z, rotationAngle = 0, stepCount = 10) {
     stairsGroup.rotation.y = rotationAngle;
 
     scene.add(stairsGroup);
+
+    return stairsGroup;
 }
 
 function createLStaircase(x, y, z, rotationAngle = 0, stepCount = 10) {
@@ -210,38 +207,115 @@ function createLStaircase(x, y, z, rotationAngle = 0, stepCount = 10) {
     stairsGroup.rotation.y = rotationAngle;
 
     scene.add(stairsGroup);
+
+    return stairsGroup;
+}
+function createPathway(x, y, z, length, width, rotationAngle = 0) {
+    const pathwayGroup = new THREE.Group();
+
+    const pathwayGeometry = new THREE.BoxGeometry(width, 0.3, length);
+    const pathwayMaterial = new THREE.MeshStandardMaterial({ map: stairTexture });
+
+    const pathway = new THREE.Mesh(pathwayGeometry, pathwayMaterial);
+    pathway.position.set(0, 0, -length / 2);
+    pathwayGroup.add(pathway);
+
+    const railingHeight = 1;
+    const railingThickness = 0.1;
+    const railingMaterial = new THREE.MeshStandardMaterial({ map: stairTexture });
+
+    let leftRailingPositions = [];
+    let rightRailingPositions = [];
+
+    for (let i = 0; i <= length; i += 1) {
+        const leftRailing = new THREE.Mesh(
+            new THREE.BoxGeometry(railingThickness, railingHeight, railingThickness),
+            railingMaterial
+        );
+        leftRailing.position.set(-width / 2 - railingThickness / 2, railingHeight / 2, -i);
+        pathwayGroup.add(leftRailing);
+        leftRailingPositions.push(leftRailing.position.clone().add(new THREE.Vector3(0, railingHeight / 2, 0)));
+
+        const rightRailing = new THREE.Mesh(
+            new THREE.BoxGeometry(railingThickness, railingHeight, railingThickness),
+            railingMaterial
+        );
+        rightRailing.position.set(width / 2 + railingThickness / 2, railingHeight / 2, -i);
+        pathwayGroup.add(rightRailing);
+        rightRailingPositions.push(rightRailing.position.clone().add(new THREE.Vector3(0, railingHeight / 2, 0)));
+    }
+
+    const leftCurve = new THREE.CatmullRomCurve3(leftRailingPositions);
+    const leftCurveGeometry = new THREE.TubeGeometry(leftCurve, 20, railingThickness / 2, 8, false);
+    const leftCurveMesh = new THREE.Mesh(leftCurveGeometry, railingMaterial);
+    pathwayGroup.add(leftCurveMesh);
+
+    const rightCurve = new THREE.CatmullRomCurve3(rightRailingPositions);
+    const rightCurveGeometry = new THREE.TubeGeometry(rightCurve, 20, railingThickness / 2, 8, false);
+    const rightCurveMesh = new THREE.Mesh(rightCurveGeometry, railingMaterial);
+    pathwayGroup.add(rightCurveMesh);
+
+    pathwayGroup.position.set(x, y, z);
+    pathwayGroup.rotation.y = rotationAngle; // Rotate the pathway group
+    scene.add(pathwayGroup);
+
+    return pathwayGroup;
 }
 
 
 function createAllStairs() {
-    createStaircase(-8 + 0.7 / 2, 0, 1, -2); // Normal staircase
-    
-    createLStaircase(-3, -6, 5, Math.PI / 25, 13); // L-shaped staircase// L-shaped staircase
+    stairsGroup = createStaircase(-10 + 0.7 / 2, 0, 0, 0, 12, 2); // Default orientation
+    createLStaircase(-3, -6, 5, Math.PI / 25, 13); // L-shaped staircase
+    createPathway(10 - 0.7 / 2 - 0.5, 3.5, 1, 11, 2, Math.PI/2); // Pathway for right wall door, rotated 180 degrees
 }
 
+// Create a door on a wall with an arched frame
 
-// Create a door on a wall
 function createWallDoor(x, y, z) {
     const doorWidth = 3;
     const doorHeight = 7;
     const doorDepth = 0.5;
-    const doorMaterial = new THREE.MeshStandardMaterial({
-        map: doorTexture
-    }); // Apply door texture
+    const archHeight = 3;
 
+    // Door geometry and material
     const doorGeometry = new THREE.BoxGeometry(doorWidth, doorHeight, doorDepth);
+    const doorMaterial = new THREE.MeshStandardMaterial({ map: doorTexture });
     const doorMesh = new THREE.Mesh(doorGeometry, doorMaterial);
-
-    // Position the door on the specified wall
     doorMesh.position.set(x, y, z);
 
+    // Arched frame geometry and material
+    const archGeometry = new THREE.PlaneGeometry(doorWidth + 0.5, archHeight);
+    const archMaterial = new THREE.MeshStandardMaterial({ map: archTexture });
+    const archMesh = new THREE.Mesh(archGeometry, archMaterial);
+    archMesh.position.set(x, y + doorHeight / 2 + archHeight / 2, z + doorDepth / 2 + 0.01);
+
+    // Add both door and arch to the scene
     scene.add(doorMesh);
+    scene.add(archMesh);
+
+    // Add click event listener to the door
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    function onMouseClick(event) {
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObject(doorMesh);
+
+        if (intersects.length > 0) {
+            gsap.to(doorMesh.rotation, { y: Math.PI / 2, duration: 1 });
+        }
+    }
+
+    window.addEventListener('click', onMouseClick, false);
 }
+
 function toggleLight() {
     lightOn = !lightOn;
     light.visible = lightOn;
 }
-
 
 let draggableLamps = []; // DragControls için kullanılacak dizi
 function createLamp(xPosition, yPosition, zPosition) {
@@ -296,9 +370,6 @@ function createLamp(xPosition, yPosition, zPosition) {
     return lamp;
 }
 
-
-
-
 function createWalls() {
     // Updated wall colors and shading
     const wallTexture = textureLoader.load('wall.jpg'); // Replace with your texture image path
@@ -337,7 +408,7 @@ function createWalls() {
 
     // Add doors to each wall
     createWallDoor(-10 + wallWidth / 2, 4, 4); // Left wall door
-    createWallDoor(10 - wallWidth / 2, 3.5, 1); // Right wall door
+    createWallDoor(10 - wallWidth / 2, 7, 1); // Right wall door
     createWallDoor(0, 3.5, -wallDepth / 2); // Back wall door
 
     // Add lamps to each wall
@@ -345,6 +416,7 @@ function createWalls() {
     createLamp(9 - wallWidth / 10, -6, 0); // Right wall lamp
     createLamp(5, 9, -wallDepth / 2); // Back wall lamp
 }
+
 function createPicture(x, y, z, imageUrl, w, h, frameThickness, frameTextureUrl) {
     // Tablo geometrisi
     const paintingWidth = w;
@@ -379,6 +451,7 @@ function createPicture(x, y, z, imageUrl, w, h, frameThickness, frameTextureUrl)
 
     return group;
 }
+
 function createMovingRedSun() {
     // Yol noktaları tanımlama (objenin hareket ettiği yollar)
     const pathPoints = [
@@ -440,9 +513,6 @@ function createMovingRedSun() {
 // Hareketli bir güneş oluştur ve sahneye ekle
 createMovingRedSun();
 
-
-
-
 // Kadın resmi ve çerçeve texture URL'si
 createPicture(4, 1, -10, 'guy.jpg', 3, 3.2, 0.25, 'frameTexture.jpg');
 createPicture(9, 3, 10, 'guysad.jpg', 3, 3.2, 0.26, 'frameTexture.jpg');
@@ -452,19 +522,42 @@ createPicture(1, -1.4, 10, 'seetwoman8.jpg', 1, 2, 0.27, 'frameTexture.jpg');
 createPicture(5, 9, 10, 'yunan.jpg', 2, 1, 0.26, 'frameTexture.jpg');
 createPicture(0, 9, 10, '', 4, 3, 0.26, 'frameTexture.jpg');
 
-// Özel olarak belirttiğiniz yere hareketli bir nesne eklemek
-
-
 // Call the functions to create the staircase, door, and walls
 createAllStairs();
 createWalls();
+
+// Animation loop to rotate the staircase over time
+let rotationSpeed = 0.01; // Adjust the speed of the rotation
+let rotationDirection = 1; // 1 for clockwise, -1 for counterclockwise
+let rotating = true; // Flag to control rotation
+
+function animate() {
+    requestAnimationFrame(animate);
+
+    // Rotate the staircase if rotating flag is true
+    if (rotating) {
+        stairsGroup.rotation.y += rotationSpeed * rotationDirection;
+    }
+
+    // Check for collision with walls and reverse direction if necessary
+    const minAngle = -2 * Math.PI / 3; // Minimum rotation angle (adjust as needed)
+    const maxAngle = Math.PI / 60; // Maximum rotation angle (adjust as needed)
+
+    if (stairsGroup.rotation.y >= maxAngle || stairsGroup.rotation.y <= minAngle) {
+        rotationDirection *= -1; // Reverse rotation direction
+    }
+
+    renderer.render(scene, camera);
+}
+
+animate();
 
 // Raycaster for detecting clicks
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 
 function onMouseClick(event) {
-    // Calculate mouse position in normalized device coordinates (-1 to +1) for both components.
+    // Calculate mouse position in normalized device coordinates (-1 to +1) for both components
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
@@ -474,30 +567,14 @@ function onMouseClick(event) {
     // Calculate objects intersecting the picking ray
     const intersects = raycaster.intersectObjects(scene.children, true);
 
-    if (intersects.length > 0) {
-        // Rotate the staircase group by -30 degrees (-π/6 radians) around the y-axis if within bounds
-        const angleIncrement = -Math.PI / 3; // -60 degrees in radians
-        const newAngle = currentRotationAngle + angleIncrement;
-
-        // Check if the new rotation angle will cause the staircase to intersect the walls
-        if (Math.abs(newAngle) <= Math.PI) { // Allow up to 90 degrees rotation in either direction
-            const axis = new THREE.Vector3(0, 1, 0); // Rotate around the y-axis
-            intersects[0].object.parent.rotateOnAxis(axis, angleIncrement);
-            currentRotationAngle = newAngle;
-        }
+    // Check if the clicked object is part of the stairsGroup
+    if (intersects.length > 0 && stairsGroup.children.includes(intersects[0].object)) {
+        rotating = !rotating; // Toggle rotation on click
     }
 }
 
 // Add event listener for mouse click
 window.addEventListener('click', onMouseClick, false);
-
-// Render loop
-function animate() {
-    requestAnimationFrame(animate);
-    renderer.render(scene, camera);
-}
-
-animate();
 
 // Handle window resize
 window.addEventListener('resize', () => {
