@@ -496,8 +496,8 @@ function animate() {
 
 animate();
 
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2();
+raycaster = new THREE.Raycaster();
+mouse = new THREE.Vector2();
 
 function onMouseClick(event) {
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -544,3 +544,92 @@ document.addEventListener("keydown", (event) => {
             break;
     }
 });
+
+// Dragging and Dropping Lamps
+let selectedLamp = null;
+let offset = new THREE.Vector3();
+let plane = new THREE.Plane();
+let intersect = new THREE.Vector3();
+
+function onMouseDown(event) {
+    event.preventDefault();
+
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+
+    const intersects = raycaster.intersectObjects(draggableLamps, true);
+
+    if (intersects.length > 0) {
+        selectedLamp = intersects[0].object.parent;  // Select the entire group
+
+        if (raycaster.ray.intersectPlane(plane, intersect)) {
+            offset.copy(intersect).sub(selectedLamp.position);
+        }
+
+        document.addEventListener('mousemove', onMouseMove, false);
+        document.addEventListener('mouseup', onMouseUp, false);
+    }
+}
+
+function onMouseMove(event) {
+    event.preventDefault();
+
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+
+    if (selectedLamp) {
+        if (raycaster.ray.intersectPlane(plane, intersect)) {
+            selectedLamp.position.copy(intersect.sub(offset));
+            constrainLampPosition(selectedLamp);
+        }
+    }
+}
+
+function onMouseUp(event) {
+    event.preventDefault();
+
+    document.removeEventListener('mousemove', onMouseMove, false);
+    document.removeEventListener('mouseup', onMouseUp, false);
+
+    selectedLamp = null;
+}
+
+function onDocumentMouseMove(event) {
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+
+    if (selectedLamp) {
+        if (raycaster.ray.intersectPlane(plane, intersect)) {
+            selectedLamp.position.copy(intersect.sub(offset));
+            constrainLampPosition(selectedLamp);
+        }
+    } else {
+        plane.setFromNormalAndCoplanarPoint(camera.getWorldDirection(plane.normal), intersect);
+    }
+}
+
+function constrainLampPosition(lamp) {
+    const minX = -10 + 0.5; // Adjust these values according to your scene's boundaries
+    const maxX = 10 - 0.5;
+    const minY = 0;
+    const maxY = 10;
+    const minZ = -15;
+    const maxZ = 15;
+
+    lamp.position.x = Math.max(minX, Math.min(maxX, lamp.position.x));
+    lamp.position.y = Math.max(minY, Math.min(maxY, lamp.position.y));
+    lamp.position.z = Math.max(minZ, Math.min(maxZ, lamp.position.z));
+}
+
+function initDragControls() {
+    window.addEventListener('mousedown', onMouseDown, false);
+    window.addEventListener('mousemove', onDocumentMouseMove, false);
+}
+
+initDragControls();
