@@ -34,7 +34,8 @@ wallTexture.wrapS = THREE.RepeatWrapping;
 wallTexture.wrapT = THREE.RepeatWrapping;
 wallTexture.repeat.set(4, 4);
 
-const doorTexture = textureLoader.load('door.jpg');
+const doorTexture = textureLoader.load('door3.jpg');
+const frameTexture = textureLoader.load('doorframe.jpg');
 const archTexture = textureLoader.load('arch.jpg');
 const stairTexture = textureLoader.load('stair.jpg');
 
@@ -252,45 +253,55 @@ function createPathway(x, y, z, length, width, rotationAngle = 0) {
 
 function createAllStairs() {
     stairsGroup = createStaircase(-10 + 0.7 / 2, 0, 0, 0, 12, 2);
-    createLStaircase(-3, -6, 5, Math.PI / 25, 13);
+    createLStaircase(-4, -12, -15+25, Math.PI / 25, 50);
     createPathway(10 - 0.7 / 2 - 0.5, 3.5, 1, 11, 2, Math.PI / 2);
 }
 
-function createWallDoor(x, y, z) {
+function createWallDoor(x, y, z, angle) {
     const doorWidth = 3;
     const doorHeight = 7;
-    const doorDepth = 0.5;
-    const archHeight = 3;
+    const doorDepth = 0.6;
 
+    // Door material with texture
+    const doorMaterial = new THREE.MeshStandardMaterial({
+        map: doorTexture,
+        color: 0x808080,
+    });
+
+    // Door geometry
     const doorGeometry = new THREE.BoxGeometry(doorWidth, doorHeight, doorDepth);
-    const doorMaterial = new THREE.MeshStandardMaterial({ map: doorTexture });
     const doorMesh = new THREE.Mesh(doorGeometry, doorMaterial);
+
+    // Position the door on the specified wall
     doorMesh.position.set(x, y, z);
 
-    const archGeometry = new THREE.PlaneGeometry(doorWidth + 0.5, archHeight);
-    const archMaterial = new THREE.MeshStandardMaterial({ map: archTexture });
-    const archMesh = new THREE.Mesh(archGeometry, archMaterial);
-    archMesh.position.set(x, y + doorHeight / 2 + archHeight / 2, z + doorDepth / 2 + 0.01);
+    // Rotate the door (example rotation)
+    doorMesh.rotation.y = angle; // angle in radians
 
+    // Add door to the scene
     scene.add(doorMesh);
-    scene.add(archMesh);
 
-    const raycaster = new THREE.Raycaster();
-    const mouse = new THREE.Vector2();
+    // Back panel geometry
+    const backPanelWidth = doorWidth + 4;
+    const backPanelHeight = doorHeight + 5;
+    const backPanelDepth = 0.5; // Thickness of the back panel
 
-    function onMouseClick(event) {
-        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    const backPanelMaterial = new THREE.MeshStandardMaterial({
+        map: frameTexture
+    });
+    
 
-        raycaster.setFromCamera(mouse, camera);
-        const intersects = raycaster.intersectObject(doorMesh);
+    const backPanelGeometry = new THREE.BoxGeometry(backPanelWidth, backPanelHeight, backPanelDepth);
+    const backPanelMesh = new THREE.Mesh(backPanelGeometry, backPanelMaterial);
 
-        if (intersects.length > 0) {
-            gsap.to(doorMesh.rotation, { y: Math.PI / 2, duration: 1 });
-        }
-    }
+    // Position the back panel behind the door
+    backPanelMesh.position.set(x, y, z - (doorDepth / 2 + backPanelDepth / 2));
 
-    window.addEventListener('click', onMouseClick, false);
+    // Rotate the back panel the same as the door
+    backPanelMesh.rotation.y = angle;
+
+    // Add back panel to the scene
+    scene.add(backPanelMesh);
 }
 
 function toggleLight() {
@@ -375,9 +386,9 @@ function createWalls() {
     backWall.position.set(0, wallHeight / 2 - 50, -wallDepth / 2);
     scene.add(backWall);
 
-    createWallDoor(-10 + wallWidth / 2, 4, 4);
-    createWallDoor(10 - wallWidth / 2, 7, 1);
-    createWallDoor(0, 3.5, -wallDepth / 2);
+    createWallDoor(-10 + wallWidth / 2, 4, 4, Math.PI/2); // Add angle
+    createWallDoor(10 - wallWidth / 2, 7, 1, -Math.PI / 2); // Add angle
+    createWallDoor(0, 3.5, -wallDepth / 2+0.6  , 0); 
 
     createLamp(-9 + wallWidth / 2, -3, 0);
     createLamp(9 - wallWidth / 10, -6, 0);
